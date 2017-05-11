@@ -539,7 +539,7 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
 
         TSDebug(PLUGIN_NAME, "tracking state %p from txn %p for %s", state, txn, state->req_info->effective_url);
       } else {
-        free_request_state(state)
+        free_request_state(state);
       }
     }
 
