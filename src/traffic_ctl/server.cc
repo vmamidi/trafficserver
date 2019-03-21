@@ -60,7 +60,7 @@ CtrlEngine::server_backtrace()
   }
 
   std::cout << trace << std::endl;
-  TSfree(trace);
+  TSMgmtfree(trace);
 }
 
 void

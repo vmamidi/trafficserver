@@ -290,7 +290,7 @@ public:
             if (TSRecordGetString(item.name, &strValue) == TS_ERR_OKAY) {
               string key     = item.name;
               (*_stats)[key] = strValue;
-              TSfree(strValue);
+              TSMgmtfree(strValue);
             } else {
               fprintf(stderr, "Error getting stat: %s when calling TSRecordGetString() failed: file \"%s\", line %d\n\n", item.name,
                       __FILE__, __LINE__);

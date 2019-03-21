@@ -46,25 +46,25 @@
  * API Memory Management
  ***************************************************************************/
 void *
-_TSmalloc(unsigned int size, const char * /* path ATS_UNUSED */)
+_TSMgmtmalloc(size_t size, const char * /* path ATS_UNUSED */)
 {
   return ats_malloc(size);
 }
 
 void *
-_TSrealloc(void *ptr, unsigned int size, const char * /* path ATS_UNUSED */)
+_TSMgmtrealloc(void *ptr, size_t size, const char * /* path ATS_UNUSED */)
 {
   return ats_realloc(ptr, size);
 }
 
 char *
-_TSstrdup(const char *str, int length, const char * /* path ATS_UNUSED */)
+_TSMgmtstrdup(const char *str, int64_t length, const char * /* path ATS_UNUSED */)
 {
   return ats_strndup(str, length);
 }
 
 void
-_TSfree(void *ptr)
+_TSMgmtfree(void *ptr)
 {
   ats_free(ptr);
 }

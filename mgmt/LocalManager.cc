@@ -195,30 +195,30 @@ LocalManager::processRunning()
 
 LocalManager::LocalManager(bool proxy_on, bool listen) : BaseManager(), run_proxy(proxy_on), listen_for_proxy(listen)
 {
-  bool found;
-  std::string rundir(RecConfigReadRuntimeDir());
-  std::string bindir(RecConfigReadBinDir());
-  std::string sysconfdir(RecConfigReadConfigDir());
+  //  bool found;
+  // std::string rundir(RecConfigReadRuntimeDir());
+  // std::string bindir(RecConfigReadBinDir());
+  // std::string sysconfdir(RecConfigReadConfigDir());
 
-  manager_started_at = time(nullptr);
+  // manager_started_at = time(nullptr);
 
-  RecRegisterStatInt(RECT_NODE, "proxy.node.proxy_running", 0, RECP_NON_PERSISTENT);
+  // RecRegisterStatInt(RECT_NODE, "proxy.node.proxy_running", 0, RECP_NON_PERSISTENT);
 
-  RecInt http_enabled = REC_readInteger("proxy.config.http.enabled", &found);
-  ink_assert(found);
-  if (http_enabled && found) {
-    HttpProxyPort::loadConfig(m_proxy_ports);
-  }
-  HttpProxyPort::loadDefaultIfEmpty(m_proxy_ports);
+  // RecInt http_enabled = REC_readInteger("proxy.config.http.enabled", &found);
+  // ink_assert(found);
+  // if (http_enabled && found) {
+  // HttpProxyPort::loadConfig(m_proxy_ports);
+  //}
+  // HttpProxyPort::loadDefaultIfEmpty(m_proxy_ports);
 
   // Get the default IP binding values.
-  RecHttpLoadIp("proxy.local.incoming_ip_to_bind", m_inbound_ip4, m_inbound_ip6);
+  // RecHttpLoadIp("proxy.local.incoming_ip_to_bind", m_inbound_ip4, m_inbound_ip6);
 
-  if (access(sysconfdir.c_str(), R_OK) == -1) {
-    mgmt_log("[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n", sysconfdir.c_str(), errno,
-             strerror(errno));
-    mgmt_fatal(0, "[LocalManager::LocalManager] please set the 'TS_ROOT' environment variable\n");
-  }
+  // if (access(sysconfdir.c_str(), R_OK) == -1) {
+  // mgmt_log("[LocalManager::LocalManager] unable to access() directory '%s': %d, %s\n", sysconfdir.c_str(), errno,
+  //          strerror(errno));
+  // mgmt_fatal(0, "[LocalManager::LocalManager] please set the 'TS_ROOT' environment variable\n");
+  //}
 
 #if TS_HAS_WCCP
   // Bind the WCCP address if present.
@@ -245,20 +245,20 @@ LocalManager::LocalManager(bool proxy_on, bool listen) : BaseManager(), run_prox
   }
 #endif
 
-  process_server_timeout_secs  = REC_readInteger("proxy.config.lm.pserver_timeout_secs", &found);
-  process_server_timeout_msecs = REC_readInteger("proxy.config.lm.pserver_timeout_msecs", &found);
-  proxy_name                   = REC_readString("proxy.config.proxy_name", &found);
-  proxy_binary                 = REC_readString("proxy.config.proxy_binary", &found);
-  env_prep                     = REC_readString("proxy.config.env_prep", &found);
+  // process_server_timeout_secs  = REC_readInteger("proxy.config.lm.pserver_timeout_secs", &found);
+  // process_server_timeout_msecs = REC_readInteger("proxy.config.lm.pserver_timeout_msecs", &found);
+  // proxy_name                   = REC_readString("proxy.config.proxy_name", &found);
+  // proxy_binary                 = REC_readString("proxy.config.proxy_binary", &found);
+  // env_prep                     = REC_readString("proxy.config.env_prep", &found);
 
   // Calculate proxy_binary from the absolute bin_path
-  absolute_proxy_binary = ats_stringdup(Layout::relative_to(bindir, proxy_binary));
+  // absolute_proxy_binary = ats_stringdup(Layout::relative_to(bindir, proxy_binary));
 
   // coverity[fs_check_call]
-  if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
-    mgmt_log("[LocalManager::LocalManager] Unable to access() '%s': %d, %s\n", absolute_proxy_binary, errno, strerror(errno));
-    mgmt_fatal(0, "[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
-  }
+  // if (access(absolute_proxy_binary, R_OK | X_OK) == -1) {
+  // mgmt_log("[LocalManager::LocalManager] Unable to access() '%s': %d, %s\n", absolute_proxy_binary, errno, strerror(errno));
+  // mgmt_fatal(0, "[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
+  //}
 
   return;
 }

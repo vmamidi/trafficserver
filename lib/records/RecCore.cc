@@ -199,6 +199,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
   // initialize record array for our internal stats (this can be reallocated later)
   g_records = (RecRecord *)ats_malloc(REC_MAX_RECORDS * sizeof(RecRecord));
 
+  printf("i am at %d, %s\n", __LINE__, __FILE__);
   // initialize record rwlock
   ink_rwlock_init(&g_records_rwlock);
 
@@ -207,23 +208,30 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
     RecReadStatsFile();
   }
 
+  printf("i am at %d, %s\n", __LINE__, __FILE__);
   // read configs
   if ((mode_type == RECM_SERVER) || (mode_type == RECM_STAND_ALONE)) {
     bool file_exists = true;
 
+    printf("i am at %d, %s\n", __LINE__, __FILE__);
     ink_mutex_init(&g_rec_config_lock);
+    printf("i am at %d, %s\n", __LINE__, __FILE__);
 
     g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE REC_SHADOW_EXT));
+    printf("i am at %d, %s\n", __LINE__, __FILE__);
     if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
+      printf("i am at %d, %s\n", __LINE__, __FILE__);
       ats_free((char *)g_rec_config_fpath);
       g_rec_config_fpath = ats_stringdup(RecConfigReadConfigPath(nullptr, REC_CONFIG_FILE));
       if (RecFileExists(g_rec_config_fpath) == REC_ERR_FAIL) {
+        printf("i am at %d, %s\n", __LINE__, __FILE__);
         RecLog(DL_Warning, "Could not find '%s', system will run with defaults\n", REC_CONFIG_FILE);
         file_exists = false;
       }
     }
 
     if (file_exists) {
+      printf("i am at %d, %s\n", __LINE__, __FILE__);
       RecReadConfigFile(true);
     }
   }

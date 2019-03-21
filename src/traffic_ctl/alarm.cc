@@ -29,7 +29,7 @@ struct AlarmListPolicy {
   static void
   free(entry_type e)
   {
-    TSfree(e);
+    TSMgmtfree(e);
   }
 
   static entry_type
@@ -57,7 +57,7 @@ CtrlEngine::alarm_list()
   while (!alarms.empty()) {
     char *a = alarms.next();
     std::cout << a << std::endl;
-    TSfree(a);
+    TSMgmtfree(a);
   }
 }
 
@@ -82,12 +82,12 @@ CtrlEngine::alarm_clear()
     error = TSEventResolve(a);
     if (error != TS_ERR_OKAY) {
       CtrlMgmtError(error, "failed to resolve %s", a);
-      TSfree(a);
+      TSMgmtfree(a);
       status_code = CTRL_EX_ERROR;
       return;
     }
 
-    TSfree(a);
+    TSMgmtfree(a);
   }
 }
 

@@ -228,16 +228,16 @@ typedef void (*TSDisconnectFunc)(void *data);
 /***************************************************************************
  * API Memory Management
  ***************************************************************************/
-#define TSmalloc(s) _TSmalloc((s), TS_RES_MEM_PATH)
-#define TSrealloc(p, s) _TSrealloc((p), (s), TS_RES_MEM_PATH)
-#define TSstrdup(p) _TSstrdup((p), -1, TS_RES_MEM_PATH)
-#define TSstrndup(p, n) _TSstrdup((p), (n), TS_RES_MEM_PATH)
-#define TSfree(p) _TSfree(p)
+#define TSMgmtmalloc(s) _TSMgmtmalloc((s), TS_RES_MEM_PATH)
+#define TSMgmtrealloc(p, s) _TSMgmtrealloc((p), (s), TS_RES_MEM_PATH)
+#define TSMgmtstrdup(p) _TSMgmtstrdup((p), -1, TS_RES_MEM_PATH)
+#define TSMgmtstrndup(p, n) _TSMgmtstrdup((p), (n), TS_RES_MEM_PATH)
+#define TSMgmtfree(p) _TSMgmtfree(p)
 
-tsapi void *_TSmalloc(unsigned int size, const char *path);
-tsapi void *_TSrealloc(void *ptr, unsigned int size, const char *path);
-tsapi char *_TSstrdup(const char *str, int length, const char *path);
-tsapi void _TSfree(void *ptr);
+tsapi void *_TSMgmtmalloc(size_t size, const char *path);
+tsapi void *_TSMgmtrealloc(void *ptr, size_t size, const char *path);
+tsapi char *_TSMgmtstrdup(const char *str, int64_t length, const char *path);
+tsapi void _TSMgmtfree(void *ptr);
 
 /***************************************************************************
  * API Helper Functions for Data Carrier Structures

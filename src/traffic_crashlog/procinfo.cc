@@ -155,12 +155,12 @@ crashlog_write_backtrace(FILE *fp, const crashlog_target &)
   if ((mgmterr = TSProxyBacktraceGet(0, &trace)) != TS_ERR_OKAY) {
     char *msg = TSGetErrorMessage(mgmterr);
     fprintf(fp, "Unable to retrieve backtrace: %s\n", msg);
-    TSfree(msg);
+    TSMgmtfree(msg);
     return false;
   }
 
   fprintf(fp, "%s", trace);
-  TSfree(trace);
+  TSMgmtfree(trace);
   return true;
 }
 
@@ -174,7 +174,7 @@ crashlog_write_records(FILE *fp, const crashlog_target &)
   if ((mgmterr = TSRecordGetMatchMlt(".", list)) != TS_ERR_OKAY) {
     char *msg = TSGetErrorMessage(mgmterr);
     fprintf(fp, "Unable to retrieve Traffic Server records: %s\n", msg);
-    TSfree(msg);
+    TSMgmtfree(msg);
     goto done;
   }
 

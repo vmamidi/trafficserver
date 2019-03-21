@@ -74,7 +74,9 @@ libtsmgmt_la_LIBADD = @LIBOBJS@ \
 	$(top_builddir)/mgmt/utils/libutils_p.la
 
 if BUILD_TESTS
-traffic_api_cli_remote_SOURCES = APITestCliRemote.cc
+traffic_api_cli_remote_SOURCES = \
+	APITestCliRemote.cc
+
 endif
 
 traffic_api_cli_remote_LDADD = \

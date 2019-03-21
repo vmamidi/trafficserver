@@ -83,10 +83,10 @@ static AppVersionInfo appVersionInfo; // Build info for this application
 static inkcoreapi DiagsConfig *diagsConfig;
 static char debug_tags[1024]  = "";
 static char action_tags[1024] = "";
-static int proxy_off          = false;
-static int listen_off         = false;
-static char bind_stdout[512]  = "";
-static char bind_stderr[512]  = "";
+// static int proxy_off          = false;
+// static int listen_off         = false;
+static char bind_stdout[512] = "";
+static char bind_stderr[512] = "";
 
 static const char *mgmt_path = nullptr;
 
@@ -469,54 +469,54 @@ api_socket_is_restricted()
 int
 main(int argc, const char **argv)
 {
-  const long MAX_LOGIN = ink_login_name_max();
+  // const long MAX_LOGIN = ink_login_name_max();
 
-  runroot_handler(argv);
+  // runroot_handler(argv);
 
   // Before accessing file system initialize Layout engine
   Layout::create();
-  mgmt_path = Layout::get()->sysconfdir.c_str();
+  // mgmt_path = Layout::get()->sysconfdir.c_str();
 
   // Set up the application version info
-  appVersionInfo.setup(PACKAGE_NAME, "traffic_manager", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+  // appVersionInfo.setup(PACKAGE_NAME, "traffic_manager", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
-  bool found       = false;
-  int just_started = 0;
-  // TODO: This seems completely incomplete, disabled for now
+  // bool found       = false;
+  // int just_started = 0;
+  /*// TODO: This seems completely incomplete, disabled for now
   //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_local = 0;
-  char *proxy_port   = nullptr;
-  char *tsArgs       = nullptr;
-  int disable_syslog = false;
-  char userToRunAs[MAX_LOGIN + 1];
-  RecInt fds_throttle = -1;
+  //char *proxy_port   = nullptr;
+ // char *tsArgs       = nullptr;
+  //int disable_syslog = false;
+  //char userToRunAs[MAX_LOGIN + 1];
+  //RecInt fds_throttle = -1;
 
   ArgumentDescription argument_descriptions[] = {
-    {"proxyOff", '-', "Disable proxy", "F", &proxy_off, nullptr, nullptr},
-    {"listenOff", '-', "Disable traffic manager listen to proxy ports", "F", &listen_off, nullptr, nullptr},
+   // {"proxyOff", '-', "Disable proxy", "F", &proxy_off, nullptr, nullptr},
+   // {"listenOff", '-', "Disable traffic manager listen to proxy ports", "F", &listen_off, nullptr, nullptr},
     {"path", '-', "Path to the management socket", "S*", &mgmt_path, nullptr, nullptr},
     {"recordsConf", '-', "Path to records.config", "S*", &recs_conf, nullptr, nullptr},
-    {"tsArgs", '-', "Additional arguments for traffic_server", "S*", &tsArgs, nullptr, nullptr},
-    {"proxyPort", '-', "HTTP port descriptor", "S*", &proxy_port, nullptr, nullptr},
+  //  {"tsArgs", '-', "Additional arguments for traffic_server", "S*", &tsArgs, nullptr, nullptr},
+   // {"proxyPort", '-', "HTTP port descriptor", "S*", &proxy_port, nullptr, nullptr},
     {TM_OPT_BIND_STDOUT, '-', "Regular file to bind stdout to", "S512", &bind_stdout, "PROXY_BIND_STDOUT", nullptr},
     {TM_OPT_BIND_STDERR, '-', "Regular file to bind stderr to", "S512", &bind_stderr, "PROXY_BIND_STDERR", nullptr},
 #if TS_USE_DIAGS
     {"debug", 'T', "Vertical-bar-separated Debug Tags", "S1023", debug_tags, nullptr, nullptr},
     {"action", 'B', "Vertical-bar-separated Behavior Tags", "S1023", action_tags, nullptr, nullptr},
 #endif
-    {"nosyslog", '-', "Do not log to syslog", "F", &disable_syslog, nullptr, nullptr},
+    //{"nosyslog", '-', "Do not log to syslog", "F", &disable_syslog, nullptr, nullptr},
     HELP_ARGUMENT_DESCRIPTION(),
     VERSION_ARGUMENT_DESCRIPTION(),
     RUNROOT_ARGUMENT_DESCRIPTION()
-  };
+  };*/
 
   // Process command line arguments and dump into variables
-  process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
+  // process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
   // change the directory to the "root" directory
-  chdir_root();
+  // chdir_root();
 
   // Line buffer standard output & standard error
-  int status;
+  /*int status;
   status = setvbuf(stdout, nullptr, _IOLBF, 0);
   if (status != 0) {
     perror("WARNING: can't line buffer stdout");
@@ -526,15 +526,16 @@ main(int argc, const char **argv)
     perror("WARNING: can't line buffer stderr");
   }
 
-  initSignalHandlers();
+  initSignalHandlers();*/
 
   // Bootstrap with LOG_DAEMON until we've read our configuration
-  if (!disable_syslog) {
+  // if (!disable_syslog) {
+  /*if (1) {
     openlog("traffic_manager", LOG_PID | LOG_NDELAY | LOG_NOWAIT, LOG_DAEMON);
     mgmt_use_syslog();
     syslog(LOG_NOTICE, "NOTE: --- Manager Starting ---");
     syslog(LOG_NOTICE, "NOTE: Manager Version: %s", appVersionInfo.FullVersionInfoStr);
-  }
+  }*/
 
   // Bootstrap the Diags facility so that we can use it while starting
   //  up the manager
@@ -548,42 +549,43 @@ main(int argc, const char **argv)
 
   init_dirs(); // setup critical directories, needs LibRecords
 
-  if (RecGetRecordString("proxy.config.admin.user_id", userToRunAs, sizeof(userToRunAs)) != REC_ERR_OKAY ||
+  /*if (RecGetRecordString("proxy.config.admin.user_id", userToRunAs, sizeof(userToRunAs)) != REC_ERR_OKAY ||
       strlen(userToRunAs) == 0) {
     mgmt_fatal(0, "proxy.config.admin.user_id is not set\n");
-  }
+  }*/
 
-  RecGetRecordInt("proxy.config.net.connections_throttle", &fds_throttle);
+  // RecGetRecordInt("proxy.config.net.connections_throttle", &fds_throttle);
 
-  set_process_limits(fds_throttle); // as root
+  // set_process_limits(fds_throttle); // as root
 
   // A user of #-1 means to not attempt to switch user. Yes, it's documented ;)
-  if (strcmp(userToRunAs, "#-1") != 0) {
+  /*if (strcmp(userToRunAs, "#-1") != 0) {
     runAsUser(userToRunAs);
-  }
+  }*/
 
-  EnableCoreFile(true);
-  check_lockfile();
+  // EnableCoreFile(true);
+  // check_lockfile();
 
-  url_init();
-  mime_init();
-  http_init();
-
-#if TS_HAS_WCCP
-  Init_Errata_Logging();
-#endif
-  ts_host_res_global_init();
-  ts_session_protocol_well_known_name_indices_init();
-  lmgmt = new LocalManager(proxy_off == false, listen_off == false);
+  // url_init();
+  // mime_init();
+  // http_init();
+  /*
+  #if TS_HAS_WCCP
+    Init_Errata_Logging();
+  #endif
+    ts_host_res_global_init();
+    ts_session_protocol_well_known_name_indices_init();*/
+  // lmgmt = new LocalManager(proxy_off == false, listen_off == false);
+  lmgmt = new LocalManager(false, false);
   RecLocalInitMessage();
   lmgmt->initAlarm();
 
-  if (diags) {
+  /*if (diags) {
     delete diagsConfig;
-  }
+  }*/
   // INKqa11968: need to set up callbacks and diags data structures
   // using configuration in records.config
-  diagsConfig = new DiagsConfig("Manager", DIAGS_LOG_FILENAME, debug_tags, action_tags, true);
+  /*diagsConfig = new DiagsConfig("Manager", DIAGS_LOG_FILENAME, debug_tags, action_tags, true);
   diags       = diagsConfig->diags;
   RecSetDiags(diags);
   diags->set_std_output(StdStream::STDOUT, bind_stdout);
@@ -592,18 +594,19 @@ main(int argc, const char **argv)
   if (is_debug_tag_set("diags")) {
     diags->dump();
   }
-  diags->cleanup_func = mgmt_cleanup;
+  diags->cleanup_func = mgmt_cleanup;*/
 
   // Setup the exported manager version records.
-  RecSetRecordString("proxy.node.version.manager.short", appVersionInfo.VersionStr, REC_SOURCE_DEFAULT);
+  /*RecSetRecordString("proxy.node.version.manager.short", appVersionInfo.VersionStr, REC_SOURCE_DEFAULT);
   RecSetRecordString("proxy.node.version.manager.long", appVersionInfo.FullVersionInfoStr, REC_SOURCE_DEFAULT);
   RecSetRecordString("proxy.node.version.manager.build_number", appVersionInfo.BldNumStr, REC_SOURCE_DEFAULT);
   RecSetRecordString("proxy.node.version.manager.build_time", appVersionInfo.BldTimeStr, REC_SOURCE_DEFAULT);
   RecSetRecordString("proxy.node.version.manager.build_date", appVersionInfo.BldDateStr, REC_SOURCE_DEFAULT);
   RecSetRecordString("proxy.node.version.manager.build_machine", appVersionInfo.BldMachineStr, REC_SOURCE_DEFAULT);
-  RecSetRecordString("proxy.node.version.manager.build_person", appVersionInfo.BldPersonStr, REC_SOURCE_DEFAULT);
+  RecSetRecordString("proxy.node.version.manager.build_person", appVersionInfo.BldPersonStr, REC_SOURCE_DEFAULT);*/
 
-  if (!disable_syslog) {
+  // if (!disable_syslog) {
+  /*if (1) {
     char sys_var[]     = "proxy.config.syslog_facility";
     char *facility_str = nullptr;
     int facility_int;
@@ -629,36 +632,36 @@ main(int argc, const char **argv)
     lmgmt->syslog_facility = facility_int;
   } else {
     lmgmt->syslog_facility = -1;
-  }
+  }*/
 
   // Find out our hostname so we can use it as part of the initialization
-  setHostnameVar();
+  // setHostnameVar();
 
   // Initialize the Config Object bindings before
   //   starting any other threads
-  lmgmt->configFiles = configFiles = new FileManager();
-  initializeRegistry();
-  configFiles->registerCallback(fileUpdated);
+  // lmgmt->configFiles = configFiles = new FileManager();
+  // initializeRegistry();
+  // configFiles->registerCallback(fileUpdated);
 
   // RecLocal's 'sync_thr' depends on 'configFiles', so we can't
   // stat the 'sync_thr' until 'configFiles' has been initialized.
-  RecLocalStart(configFiles);
+  // RecLocalStart(configFiles);
 
   // TS needs to be started up with the same outputlog bindings each time,
   // so we append the outputlog location to the persistent proxy options
   //
   // TS needs them to be able to create BaseLogFiles for each value
-  ts::bwprint(lmgmt->proxy_options, "{}{}{}", ts::bwf::OptionalAffix(tsArgs),
+  /*ts::bwprint(lmgmt->proxy_options, "{}{}{}", ts::bwf::OptionalAffix(tsArgs),
               ts::bwf::OptionalAffix(bind_stdout, " "sv, "--bind_stdout "sv),
-              ts::bwf::OptionalAffix(bind_stderr, " "sv, "--bind_stderr "sv));
+              ts::bwf::OptionalAffix(bind_stderr, " "sv, "--bind_stderr "sv));*/
 
-  if (proxy_port) {
+  /*if (proxy_port) {
     HttpProxyPort::loadValue(lmgmt->m_proxy_ports, proxy_port);
-  }
+  }*/
 
   lmgmt->initMgmtProcessServer(); /* Setup p-to-p process server */
 
-  lmgmt->listenForProxy();
+  // lmgmt->listenForProxy();
 
   // Setup the API and event sockets
   std::string rundir(RecConfigReadRuntimeDir());
@@ -791,7 +794,7 @@ main(int argc, const char **argv)
       break;
     }
 
-    if (lmgmt->run_proxy && !lmgmt->processRunning() && lmgmt->proxy_recoverable) { /* Make sure we still have a proxy up */
+    /*if (lmgmt->run_proxy && !lmgmt->processRunning() && lmgmt->proxy_recoverable) { // Make sure we still have a proxy up
       const uint64_t now = static_cast<uint64_t>(time(nullptr));
       if (sleep_time && ((now - last_start_epoc_s) < MAX_SLEEP_S)) {
         mgmt_log("Relaunching proxy after %d sec...", sleep_time);
@@ -806,7 +809,7 @@ main(int argc, const char **argv)
       } else {
         just_started++;
       }
-    } else { /* Give the proxy a chance to fire up */
+    } else { // Give the proxy a chance to fire up
       if (!lmgmt->proxy_recoverable) {
         mgmt_log("[main] Proxy is un-recoverable. Proxy will not be relaunched.\n");
       }
@@ -814,7 +817,7 @@ main(int argc, const char **argv)
       just_started++;
     }
 
-    /* This will catch the case were the proxy dies before it can connect to manager */
+     This will catch the case were the proxy dies before it can connect to manager
     if (lmgmt->proxy_launch_outstanding && !lmgmt->processRunning() && just_started >= 120) {
       just_started                    = 0;
       lmgmt->proxy_launch_outstanding = false;
@@ -828,11 +831,11 @@ main(int argc, const char **argv)
           mgmt_log("[main] Proxy terminated due to Sig %d. Relaunching after %d sec...\n", sig, sleep_time);
 #else
           mgmt_log("[main] Proxy terminated due to Sig %d: %s. Relaunching after %d sec...\n", sig, strsignal(sig), sleep_time);
-#endif /* NEED_PSIGNAL */
+#endif  NEED_PSIGNAL
         }
       }
       mgmt_log("[main] Proxy launch failed, retrying after %d sec...\n", sleep_time);
-    }
+    }*/
   }
 
   // ToDo: Here we should delete anything related to calculated metrics.
@@ -1023,7 +1026,7 @@ restoreCapabilities()
 //
 //  If we are not root, do nothing
 //
-void
+/*void
 runAsUser(const char *userName)
 {
   if (getuid() == 0 || geteuid() == 0) {
@@ -1035,4 +1038,4 @@ runAsUser(const char *userName)
     }
 #endif
   }
-} /* End runAsUser() */
+}*/ /* End runAsUser() */

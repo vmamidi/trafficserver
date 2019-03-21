@@ -38,6 +38,11 @@
 #include "tscore/ink_syslog.h"
 #include "tscore/hugepages.h"
 #include "tscore/runroot.h"
+#include "records/P_RecLocal.h"
+#include "LocalManager.h"
+#include "TSControlMain.h"
+#include "EventControlMain.h"
+#include "DerivativeMetrics.h"
 
 #include "ts/ts.h" // This is sadly needed because of us using TSThreadInit() for some reason.
 
@@ -96,6 +101,7 @@ extern "C" int plock(int);
 #include "HTTP2.h"
 #include "tscore/ink_config.h"
 #include "P_SSLSNI.h"
+#include "LocalManager.h"
 
 #include "tscore/ink_cap.h"
 
@@ -111,6 +117,8 @@ extern "C" int plock(int);
 
 #define DEFAULT_REMOTE_MANAGEMENT_FLAG 0
 #define DIAGS_LOG_FILENAME "diags.log"
+#define MGMTAPI_MGMT_SOCKET_NAME "mgmtapi.sock"
+#define MGMTAPI_EVENT_SOCKET_NAME "eventapi.sock"
 
 static const long MAX_LOGIN = ink_login_name_max();
 
@@ -130,6 +138,7 @@ int num_accept_threads = 0;
 static int num_of_udp_threads = 0;
 static int num_task_threads   = 0;
 
+LocalManager *lmgmt = nullptr;
 static char *http_accept_port_descriptor;
 int http_accept_file_descriptor = NO_FD;
 static char core_file[255]      = "";
@@ -164,6 +173,7 @@ static int poll_timeout         = -1; // No value set.
 static int cmd_disable_freelist = 0;
 
 static bool signal_received[NSIG];
+FileManager *configFiles;
 
 // 1: delay listen, wait for cache.
 // 0: Do not delay, start listen ASAP.
@@ -605,6 +615,7 @@ check_config_directories()
 static void
 initialize_process_manager()
 {
+  printf("i am at %d\n", __LINE__);
   mgmt_use_syslog();
 
   // Temporary Hack to Enable Communication with LocalManager
@@ -612,24 +623,34 @@ initialize_process_manager()
     remote_management_flag = true;
   }
 
+  printf("i am at %d\n", __LINE__);
   if (remote_management_flag) {
     // We are being managed by traffic_manager, TERM ourselves if it goes away.
     EnableDeathSignal(SIGTERM);
+    printf("i am at %d\n", __LINE__);
   }
 
+  printf("i am at %d\n", __LINE__);
   RecProcessInit(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE, diags);
+  printf("i am at %d\n", __LINE__);
   LibRecordsConfigInit();
+  printf("i am at %d\n", __LINE__);
 
   // Start up manager
   pmgmt = new ProcessManager(remote_management_flag);
+  printf("i am at %d\n", __LINE__);
 
   // Lifecycle callbacks can potentially be invoked from this thread, so force thread initialization
   // to make the TS API work. Use a lambda to avoid dealing with compiler dependent casting issues.
   pmgmt->start([]() -> void { TSThreadInit(); });
+  printf("i am at %d\n", __LINE__);
 
   RecProcessInitMessage(remote_management_flag ? RECM_CLIENT : RECM_STAND_ALONE);
+  printf("i am at %d\n", __LINE__);
   pmgmt->reconfigure();
+  printf("i am at %d\n", __LINE__);
   check_config_directories();
+  printf("i am at %d\n", __LINE__);
 
   //
   // Define version info records
@@ -1538,6 +1559,220 @@ bind_outputs(const char *bind_stdout, const char *bind_stderr)
     }
   }
 }
+bool
+api_socket_is_restricted()
+{
+  return true;
+}
+
+static bool
+is_server_idle()
+{
+  RecInt active    = 0;
+  RecInt threshold = 0;
+
+  if (RecGetRecordInt("proxy.config.restart.active_client_threshold", &threshold) != REC_ERR_OKAY) {
+    return false;
+  }
+
+  if (RecGetRecordInt("proxy.process.http.current_active_client_connections", &active) != REC_ERR_OKAY) {
+    return false;
+  }
+
+  Debug("lm", "%" PRId64 " active clients, threshold is %" PRId64, active, threshold);
+  return active <= threshold;
+}
+
+static bool
+is_server_idle_from_new_connection()
+{
+  RecInt active    = 0;
+  RecInt threshold = 0;
+  // TODO implement with the right metric
+
+  Debug("lm", "%" PRId64 " active clients, threshold is %" PRId64, active, threshold);
+
+  return active <= threshold;
+}
+
+static bool
+is_server_draining()
+{
+  RecInt draining = 0;
+  if (RecGetRecordInt("proxy.node.config.draining", &draining) != REC_ERR_OKAY) {
+    return false;
+  }
+  return draining != 0;
+}
+
+static bool
+waited_enough()
+{
+  RecInt timeout = 0;
+  if (RecGetRecordInt("proxy.config.stop.shutdown_timeout", &timeout) != REC_ERR_OKAY) {
+    return false;
+  }
+
+  return (lmgmt->mgmt_shutdown_triggered_at + timeout >= time(nullptr));
+}
+
+void *
+local_traffic_manager(void *arg)
+{
+  const int MAX_SLEEP_S      = 60; // Max sleep duration
+  int sleep_time             = 0;  // sleep_time given in sec
+  uint64_t last_start_epoc_s = 0;  // latest start attempt in seconds since epoc
+
+  // DerivativeMetrics derived; // This is simple class to calculate some useful derived metrics
+  printf("i am at %d\n", __LINE__);
+
+  for (;;) {
+    lmgmt->processEventQueue();
+    lmgmt->pollMgmtProcessServer();
+
+    // Handle rotation of output log (aka traffic.out) as well as DIAGS_LOG_FILENAME (aka manager.log)
+    // rotateLogs();
+
+    // Check for a SIGHUP
+    /*if (sigHupNotifier) {
+      mgmt_log("[main] Reading Configuration Files due to SIGHUP\n");
+      Reconfigure();
+      sigHupNotifier = 0;
+      mgmt_log("[main] Reading Configuration Files Reread\n");
+    }*/
+
+    // Update the derived metrics. ToDo: this runs once a second, that might be excessive, maybe it should be
+    // done more like every config_update_interval_ms (proxy.config.config_update_interval_ms) ?
+    // derived.Update();
+
+    if (lmgmt->mgmt_shutdown_outstanding != MGMT_PENDING_NONE) {
+      Debug("lm", "pending shutdown %d", lmgmt->mgmt_shutdown_outstanding);
+    }
+    switch (lmgmt->mgmt_shutdown_outstanding) {
+    case MGMT_PENDING_RESTART:
+      lmgmt->mgmtShutdown();
+      ::exit(0);
+      break;
+    case MGMT_PENDING_IDLE_RESTART:
+      if (!is_server_draining()) {
+        lmgmt->processDrain();
+      }
+      if (is_server_idle() || waited_enough()) {
+        lmgmt->mgmtShutdown();
+        ::exit(0);
+      }
+      break;
+    case MGMT_PENDING_BOUNCE:
+      lmgmt->processBounce();
+      lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      break;
+    case MGMT_PENDING_IDLE_BOUNCE:
+      if (!is_server_draining()) {
+        lmgmt->processDrain();
+      }
+      if (is_server_idle() || waited_enough()) {
+        lmgmt->processBounce();
+        lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      }
+      break;
+    case MGMT_PENDING_STOP:
+      lmgmt->processShutdown();
+      lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      break;
+    case MGMT_PENDING_IDLE_STOP:
+      if (!is_server_draining()) {
+        lmgmt->processDrain();
+      }
+      if (is_server_idle() || waited_enough()) {
+        lmgmt->processShutdown();
+        lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      }
+      break;
+    case MGMT_PENDING_DRAIN:
+      if (!is_server_draining()) {
+        lmgmt->processDrain();
+      }
+      lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      break;
+    case MGMT_PENDING_IDLE_DRAIN:
+      if (is_server_idle_from_new_connection()) {
+        lmgmt->processDrain();
+        lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      }
+      break;
+    case MGMT_PENDING_UNDO_DRAIN:
+      if (is_server_draining()) {
+        lmgmt->processDrain(0);
+        lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
+      }
+      break;
+    default:
+      break;
+    }
+  }
+}
+static void
+init_local_manager()
+{
+  static char debug_tags[1024] = "";
+
+  Debug("local_manager", "calling  offline");
+  printf("i am at %d\n", __LINE__);
+  // RecLocalInit();
+  // LibRecordsConfigInit();
+
+  // init_dirs(); // setup critical directories, needs LibRecords
+  lmgmt = new LocalManager(false, false);
+  printf("i am at %d\n", __LINE__);
+  // RecLocalInitMessage();
+  lmgmt->initAlarm();
+  printf("i am at %d\n", __LINE__);
+  lmgmt->initMgmtProcessServer();
+  std::string rundir(RecConfigReadRuntimeDir());
+  std::string apisock(Layout::relative_to(rundir, MGMTAPI_MGMT_SOCKET_NAME));
+  std::string eventsock(Layout::relative_to(rundir, MGMTAPI_EVENT_SOCKET_NAME));
+
+  Debug("lm", "using main socket file '%s'", apisock.c_str());
+  Debug("lm", "using event socket file '%s'", eventsock.c_str());
+  printf("i am at %d\n", __LINE__);
+
+  mode_t oldmask = umask(0);
+  mode_t newmode = api_socket_is_restricted() ? 00700 : 00777;
+
+  int mgmtapiFD         = -1; // FD for the api interface to issue commands
+  int eventapiFD        = -1; // FD for the api and clients to handle event callbacks
+  char mgmtapiFailMsg[] = "Traffic server management API service Interface Failed to Initialize.";
+
+  mgmtapiFD = bind_unix_domain_socket(apisock.c_str(), newmode);
+  if (mgmtapiFD == -1) {
+    mgmt_log("[WebIntrMain] Unable to set up socket for handling management API calls. API socket path = %s\n", apisock.c_str());
+    printf("i am at %d\n", __LINE__);
+  }
+
+  eventapiFD = bind_unix_domain_socket(eventsock.c_str(), newmode);
+  if (eventapiFD == -1) {
+    mgmt_log("[WebIntrMain] Unable to set up so for handling management API event calls. Event Socket path: %s\n",
+             eventsock.c_str());
+    printf("i am at %d\n", __LINE__);
+  }
+
+  umask(oldmask);
+  ink_thread_create(nullptr, ts_ctrl_main, &mgmtapiFD, 0, 0, nullptr);
+  ink_thread_create(nullptr, event_callback_main, &eventapiFD, 0, 0, nullptr);
+
+  mgmt_log("[TrafficManager] Setup complete\n");
+  printf("i am at %d\n", __LINE__);
+
+  /*RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(nullptr), RECP_NON_PERSISTENT);
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_required", 0, RECP_NON_PERSISTENT);
+
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.proxy", 0, RECP_NON_PERSISTENT);
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.manager", 0, RECP_NON_PERSISTENT);
+
+  RecRegisterStatInt(RECT_NODE, "proxy.node.config.draining", 0, RECP_NON_PERSISTENT);*/
+
+  ink_thread_create(nullptr, local_traffic_manager, nullptr, 0, 0, nullptr);
+}
 
 //
 // Main
@@ -1611,6 +1846,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (is_debug_tag_set("diags")) {
     diags->dump();
   }
+  init_local_manager();
+  sleep(1);
 
   // Bind stdout and stderr to specified switches
   // Still needed despite the set_std{err,out}_output() calls later since there are

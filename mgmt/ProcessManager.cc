@@ -84,6 +84,7 @@ void
 ProcessManager::start(std::function<void()> const &cb)
 {
   Debug("pmgmt", "starting process manager");
+  printf("i am here\n");
 
   init = cb;
 

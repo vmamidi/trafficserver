@@ -115,7 +115,7 @@ print_err(const char *module, TSMgmtError err)
   printf("(%s) ERROR: %s\n", module, err_msg);
 
   if (err_msg) {
-    TSfree(err_msg);
+    TSMgmtfree(err_msg);
   }
 }
 
@@ -383,7 +383,7 @@ test_records()
   } else {
     printf("[TSRecordGetString] proxy.config.proxy_name=%s\n", rec_value);
   }
-  TSfree(rec_value);
+  TSMgmtfree(rec_value);
   rec_value = nullptr;
 
   // test RecordSet
@@ -402,7 +402,7 @@ test_records()
     printf("[TSRecordGetString] proxy.config.proxy_name=%s\n", rec_value);
   }
   printf("\n");
-  TSfree(rec_value);
+  TSMgmtfree(rec_value);
 #endif
 
 #if TEST_INT
@@ -492,7 +492,7 @@ test_rec_get(char *rec_name)
   print_err("TSRecordGet", ret);
 
   TSRecordEleDestroy(rec_ele);
-  TSfree(name);
+  TSMgmtfree(name);
 }
 
 /* ------------------------------------------------------------------------
@@ -504,6 +504,7 @@ test_rec_get(char *rec_name)
 void
 test_record_get_mlt()
 {
+  return;
   TSRecordEle *rec_ele;
   TSStringList name_list;
   TSList rec_list;
@@ -515,19 +516,19 @@ test_record_get_mlt()
   rec_list  = TSListCreate();
 
   const size_t v1_size = (sizeof(char) * (strlen("proxy.config.proxy_name") + 1));
-  v1                   = (char *)TSmalloc(v1_size);
+  v1                   = (char *)TSMgmtmalloc(v1_size);
   ink_strlcpy(v1, "proxy.config.proxy_name", v1_size);
   const size_t v2_size = (sizeof(char) * (strlen("proxy.config.bin_path") + 1));
-  v2                   = (char *)TSmalloc(v2_size);
+  v2                   = (char *)TSMgmtmalloc(v2_size);
   ink_strlcpy(v2, "proxy.config.bin_path", v2_size);
   const size_t v3_size = (sizeof(char) * (strlen("proxy.config.manager_binary") + 1));
-  v3                   = (char *)TSmalloc(v3_size);
+  v3                   = (char *)TSMgmtmalloc(v3_size);
   ink_strlcpy(v3, "proxy.config.manager_binary", v3_size);
   const size_t v6_size = (sizeof(char) * (strlen("proxy.config.env_prep") + 1));
-  v6                   = (char *)TSmalloc(v6_size);
+  v6                   = (char *)TSMgmtmalloc(v6_size);
   ink_strlcpy(v6, "proxy.config.env_prep", v6_size);
   const size_t v7_size = (sizeof(char) * (strlen("proxy.config.cop.core_signal") + 1));
-  v7                   = (char *)TSmalloc(v7_size);
+  v7                   = (char *)TSMgmtmalloc(v7_size);
   ink_strlcpy(v7, "proxy.config.cop.core_signal", v7_size);
 
   // add the names to the get_list
@@ -588,6 +589,7 @@ test_record_get_mlt()
 void
 test_record_set_mlt()
 {
+  return;
   TSList list;
   TSRecordEle *ele1, *ele2;
   TSActionNeedT action = TS_ACTION_UNDEFINED;
@@ -596,12 +598,12 @@ test_record_set_mlt()
   list = TSListCreate();
 
   ele1                    = TSRecordEleCreate(); // TS_TYPE_UNDEFINED action
-  ele1->rec_name          = TSstrdup("proxy.config.cli_binary");
+  ele1->rec_name          = TSMgmtstrdup("proxy.config.cli_binary");
   ele1->rec_type          = TS_REC_STRING;
-  ele1->valueT.string_val = TSstrdup(ele1->rec_name);
+  ele1->valueT.string_val = TSMgmtstrdup(ele1->rec_name);
 
   ele2                 = TSRecordEleCreate(); // undefined action
-  ele2->rec_name       = TSstrdup("proxy.config.cop.core_signal");
+  ele2->rec_name       = TSMgmtstrdup("proxy.config.cop.core_signal");
   ele2->rec_type       = TS_REC_INT;
   ele2->valueT.int_val = -4;
 
@@ -648,10 +650,10 @@ test_read_url(bool valid)
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
     if (body) {
-      TSfree(body);
+      TSMgmtfree(body);
     }
     if (header) {
-      TSfree(header);
+      TSMgmtfree(header);
     }
 
     err = TSReadFromUrlEx("http://sadfasdfi.com:80/", &header, &headerSize, &body, &bodySize, 50000);
@@ -664,10 +666,10 @@ test_read_url(bool valid)
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
     if (header) {
-      TSfree(header);
+      TSMgmtfree(header);
     }
     if (body) {
-      TSfree(body);
+      TSMgmtfree(body);
     }
 
   } else { // use valid urls
@@ -682,10 +684,10 @@ test_read_url(bool valid)
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
     if (header) {
-      TSfree(header);
+      TSMgmtfree(header);
     }
     if (body) {
-      TSfree(body);
+      TSMgmtfree(body);
     }
 
     // read second url
@@ -699,10 +701,10 @@ test_read_url(bool valid)
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
     if (header) {
-      TSfree(header);
+      TSMgmtfree(header);
     }
     if (body) {
-      TSfree(body);
+      TSMgmtfree(body);
     }
   }
 }
@@ -736,7 +738,7 @@ print_active_events()
     for (i = 0; i < count; i++) {
       name = (char *)TSListDequeue(events);
       printf("\t%s\n", name);
-      TSfree(name);
+      TSMgmtfree(name);
     }
   }
 
@@ -786,7 +788,7 @@ try_resolve(char *event_name)
   TSMgmtError ret;
   char *name;
 
-  name = TSstrdup(event_name);
+  name = TSMgmtstrdup((const char *)event_name);
   printf("[try_resolve] Resolving event: %s\n", name);
 
   if (check_active(name)) { // resolve events
@@ -795,7 +797,7 @@ try_resolve(char *event_name)
     check_active(name); // should be non-active now
   }
 
-  TSfree(name);
+  TSMgmtfree(name);
 }
 
 /* ------------------------------------------------------------------------

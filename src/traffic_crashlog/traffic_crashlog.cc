@@ -199,7 +199,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (mgmterr != TS_ERR_OKAY) {
     char *msg = TSGetErrorMessage(mgmterr);
     Warning("failed to initialize management API: %s", msg);
-    TSfree(msg);
+    TSMgmtfree(msg);
   }
 
   ink_zero(target);

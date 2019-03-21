@@ -33,6 +33,8 @@ traffic_server_traffic_server_CPPFLAGS = \
 	-I$(abs_top_srcdir)/proxy/shared \
 	-I$(abs_top_srcdir)/mgmt \
 	-I$(abs_top_srcdir)/mgmt/utils \
+	-I$(abs_top_srcdir)/mgmt/api \
+	-I$(abs_top_srcdir)/mgmt/api/include \
 	$(TS_INCLUDES) \
 	@OPENSSL_INCLUDES@
 
@@ -60,6 +62,8 @@ traffic_server_traffic_server_SOURCES += \
 endif
 
 traffic_server_traffic_server_LDADD = \
+	$(top_builddir)/mgmt/api/libmgmtapilocal.la \
+	$(top_builddir)/mgmt/libmgmt_lm.la \
 	$(top_builddir)/proxy/http/libhttp.a \
 	$(top_builddir)/proxy/http/remap/libhttp_remap.a \
 	$(top_builddir)/proxy/http2/libhttp2.a \
