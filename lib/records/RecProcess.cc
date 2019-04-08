@@ -241,21 +241,31 @@ RecMessageInit()
 int
 RecProcessInitMessage(RecModeT mode_type)
 {
+  printf("i am at %d\n", __LINE__);
   static bool initialized_p = false;
+  printf("i am at %d\n", __LINE__);
 
   if (initialized_p) {
     return REC_ERR_OKAY;
   }
+  printf("i am at %d\n", __LINE__);
 
   RecMessageInit();
+  printf("i am at %d\n", __LINE__);
   if (RecMessageRegisterRecvCb(recv_message_cb__process, nullptr)) {
+    printf("i am at %d\n", __LINE__);
     return REC_ERR_FAIL;
   }
+  printf("i am at %d\n", __LINE__);
 
   if (mode_type == RECM_CLIENT) {
+    printf("i am at %d %s\n", __LINE__, __FILE__);
     send_pull_message(RECG_PULL_REQ);
+    printf("i am at %d %s\n", __LINE__, __FILE__);
     g_force_req_notify.lock();
+    printf("i am at %d %s\n", __LINE__, __FILE__);
     g_force_req_notify.wait();
+    printf("i am at %d %s\n", __LINE__, __FILE__);
     g_force_req_notify.unlock();
   }
 

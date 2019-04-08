@@ -50,6 +50,7 @@ send_reset_message(RecRecord *record)
   m = RecMessageAlloc(RECG_RESET);
   m = RecMessageMarshal_Realloc(m, record);
   RecDebug(DL_Note, "[send] RECG_RESET [%d bytes]", sizeof(RecMessageHdr) + m->o_write - m->o_start);
+  printf("%d.....%s\n", __LINE__, __FILE__);
   RecMessageSend(m);
   RecMessageFree(m);
   rec_mutex_release(&(record->lock));
@@ -69,6 +70,7 @@ send_set_message(RecRecord *record)
   m = RecMessageAlloc(RECG_SET);
   m = RecMessageMarshal_Realloc(m, record);
   RecDebug(DL_Note, "[send] RECG_SET [%d bytes]", sizeof(RecMessageHdr) + m->o_write - m->o_start);
+  printf("%d.....%s\n", __LINE__, __FILE__);
   RecMessageSend(m);
   RecMessageFree(m);
   rec_mutex_release(&(record->lock));
@@ -88,6 +90,7 @@ send_register_message(RecRecord *record)
   m = RecMessageAlloc(RECG_REGISTER);
   m = RecMessageMarshal_Realloc(m, record);
   RecDebug(DL_Note, "[send] RECG_REGISTER [%d bytes]", sizeof(RecMessageHdr) + m->o_write - m->o_start);
+  printf("%d.....%s\n", __LINE__, __FILE__);
   RecMessageSend(m);
   RecMessageFree(m);
   rec_mutex_release(&(record->lock));
@@ -121,7 +124,9 @@ send_push_message()
     rec_mutex_release(&(r->lock));
   }
   if (send_msg) {
+    printf("%d.....%s\n", __LINE__, __FILE__);
     RecDebug(DL_Note, "[send] RECG_PUSH [%d bytes]", sizeof(RecMessageHdr) + m->o_write - m->o_start);
+    printf("%d.....%s\n", __LINE__, __FILE__);
     RecMessageSend(m);
   }
   RecMessageFree(m);
@@ -170,6 +175,7 @@ send_pull_message(RecMessageT msg_type)
     return REC_ERR_FAIL;
   }
 
+  printf("%d.....%s\n", __LINE__, __FILE__);
   RecMessageSend(m);
   RecMessageFree(m);
 

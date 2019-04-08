@@ -70,8 +70,10 @@ EventNotify::signal()
   // to exceed the maximum, write() will fail with the errno EAGAIN,
   // which is acceptable as the receiver will be notified eventually.
   //
+  printf("i am  read is %d ... %s \n", __LINE__, __FILE__);
   ATS_UNUSED_RETURN(write(m_event_fd, &value, sizeof(uint64_t)));
 #else
+  printf("i am  read is %d ... %s \n", __LINE__, __FILE__);
   ink_cond_signal(&m_cond);
 #endif
 }
@@ -85,21 +87,26 @@ EventNotify::wait()
   struct epoll_event ev;
 
   do {
+    printf("i am  read is %d ... %s \n", __LINE__, __FILE__);
     nr_fd = epoll_wait(m_epoll_fd, &ev, 1, 500000);
   } while (nr_fd == -1 && errno == EINTR);
 
   if (nr_fd == -1) {
+    printf("value read is %d\n", nr_fd);
     return errno;
   }
 
   nr = read(m_event_fd, &value, sizeof(uint64_t));
+  printf("value read is %s\n", value);
   if (nr == sizeof(uint64_t)) {
     return 0;
   } else {
     return errno;
   }
 #else
+  printf("i am  read is %d ... %s \n", __LINE__, __FILE__);
   ink_cond_wait(&m_cond, &m_mutex);
+  printf("i am  read is %d ... %s \n", __LINE__, __FILE__);
   return 0;
 #endif
 }

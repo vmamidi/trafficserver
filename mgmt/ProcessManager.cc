@@ -464,6 +464,7 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
     */
     break;
   case MGMT_EVENT_LIBRECORDS:
+    printf("i am MGMT_EVENT_LIBRECORDS %s %d\n", data_raw, mh->data_len);
     executeMgmtCallback(MGMT_EVENT_LIBRECORDS, data_raw, mh->data_len);
     break;
   case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:

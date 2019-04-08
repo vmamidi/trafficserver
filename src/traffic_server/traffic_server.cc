@@ -1846,8 +1846,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (is_debug_tag_set("diags")) {
     diags->dump();
   }
-  init_local_manager();
-  sleep(1);
+  // init_local_manager();
+  // sleep(1);
 
   // Bind stdout and stderr to specified switches
   // Still needed despite the set_std{err,out}_output() calls later since there are
