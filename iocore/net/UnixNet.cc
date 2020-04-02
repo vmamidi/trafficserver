@@ -279,6 +279,9 @@ NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, vo
   } else if (name == "proxy.config.net.default_inactivity_timeout"sv) {
     updated_member = &NetHandler::global_config.default_inactivity_timeout;
     Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
+  } else if (name == "proxy.config.net.use_sendmsg"sv) {
+    updated_member = &NetHandler::global_config.use_sendmsg;
+    Debug("net_queue", "proxy.config.net.use_sendmsg updated to %" PRId64, data.rec_int);
   }
 
   if (updated_member) {
@@ -314,6 +317,7 @@ NetHandler::init_for_process()
   REC_ReadConfigInt32(global_config.transaction_no_activity_timeout_in, "proxy.config.net.transaction_no_activity_timeout_in");
   REC_ReadConfigInt32(global_config.keep_alive_no_activity_timeout_in, "proxy.config.net.keep_alive_no_activity_timeout_in");
   REC_ReadConfigInt32(global_config.default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
+  REC_ReadConfigInt32(global_config.use_sendmsg, "proxy.config.net.use_sendmsg");
 
   RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.max_active_connections_in", update_nethandler_config, nullptr);
@@ -321,6 +325,7 @@ NetHandler::init_for_process()
   RecRegisterConfigUpdateCb("proxy.config.net.transaction_no_activity_timeout_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.keep_alive_no_activity_timeout_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_nethandler_config, nullptr);
+  RecRegisterConfigUpdateCb("proxy.config.net.use_sendmsg", update_nethandler_config, nullptr);
 
   Debug("net_queue", "proxy.config.net.max_connections_in updated to %d", global_config.max_connections_in);
   Debug("net_queue", "proxy.config.net.max_active_connections_in updated to %d", global_config.max_connections_active_in);
@@ -330,6 +335,7 @@ NetHandler::init_for_process()
   Debug("net_queue", "proxy.config.net.keep_alive_no_activity_timeout_in updated to %d",
         global_config.keep_alive_no_activity_timeout_in);
   Debug("net_queue", "proxy.config.net.default_inactivity_timeout updated to %d", global_config.default_inactivity_timeout);
+  Debug("net_queue", "proxy.config.net.use_sendmsg updated to %d", global_config.use_sendmsg);
 }
 
 //

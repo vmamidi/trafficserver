@@ -249,7 +249,23 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
       ink_assert(niov > 0);
       ink_assert(niov <= countof(tiovec));
-      r = socketManager.readv(vc->con.fd, &tiovec[0], niov);
+      uint32_t use_sendmsg = nh->config.use_sendmsg;
+
+      if (use_sendmsg > 0) {
+        struct msghdr msg;
+
+        ink_zero(msg);
+        msg.msg_name    = const_cast<sockaddr *>(vc->get_remote_addr());
+        msg.msg_namelen = ats_ip_size(vc->get_remote_addr());
+        msg.msg_iov     = &tiovec[0];
+        msg.msg_iovlen  = niov;
+        std::cout << "using recvmsg" << std::endl;
+        r = socketManager.recvmsg(vc->con.fd, &msg, 0);
+
+      } else {
+        std::cout << "not using recvmsg" << std::endl;
+        r = socketManager.readv(vc->con.fd, &tiovec[0], niov);
+      }
 
       NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
 
@@ -945,8 +961,9 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
     // If the platform doesn't support TCP Fast Open, verify that we
     // correctly disabled support in the socket option configuration.
     ink_assert(MSG_FASTOPEN != 0 || this->options.f_tcp_fastopen == false);
+    uint32_t use_sendmsg = nh->config.use_sendmsg;
 
-    if (!this->con.is_connected && this->options.f_tcp_fastopen) {
+    if (use_sendmsg > 0) {
       struct msghdr msg;
 
       ink_zero(msg);
@@ -955,21 +972,56 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
       msg.msg_iov     = &tiovec[0];
       msg.msg_iovlen  = niov;
 
+      int flags = 0;
+
+      if (!this->con.is_connected && this->options.f_tcp_fastopen) {
+        flags |= MSG_FASTOPEN;
+      }
       NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
 
+      std::cout << "using sendmsg" << std::endl;
       r = socketManager.sendmsg(con.fd, &msg, MSG_FASTOPEN);
       if (r < 0) {
         if (r == -EINPROGRESS || r == -EWOULDBLOCK) {
-          this->con.is_connected = true;
+          if (!this->con.is_connected)
+            this->con.is_connected = true;
         }
       } else {
-        NET_INCREMENT_DYN_STAT(net_fastopen_successes_stat);
-        this->con.is_connected = true;
+        if (!this->con.is_connected) {
+          NET_INCREMENT_DYN_STAT(net_fastopen_successes_stat);
+          this->con.is_connected = true;
+        }
       }
 
     } else {
+      std::cout << "not using sendmsg" << std::endl;
       r = socketManager.writev(con.fd, &tiovec[0], niov);
     }
+
+    /* if (!this->con.is_connected && this->options.f_tcp_fastopen) {
+       struct msghdr msg;
+
+       ink_zero(msg);
+       msg.msg_name    = const_cast<sockaddr *>(this->get_remote_addr());
+       msg.msg_namelen = ats_ip_size(this->get_remote_addr());
+       msg.msg_iov     = &tiovec[0];
+       msg.msg_iovlen  = niov;
+
+       NET_INCREMENT_DYN_STAT(net_fastopen_attempts_stat);
+
+       r = socketManager.sendmsg(con.fd, &msg, MSG_FASTOPEN);
+       if (r < 0) {
+         if (r == -EINPROGRESS || r == -EWOULDBLOCK) {
+           this->con.is_connected = true;
+         }
+       } else {
+         NET_INCREMENT_DYN_STAT(net_fastopen_successes_stat);
+         this->con.is_connected = true;
+       }
+
+     } else {
+       r = socketManager.writev(con.fd, &tiovec[0], niov);
+     }*/
 
     if (r > 0) {
       buf.reader()->consume(r);
